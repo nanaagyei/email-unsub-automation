@@ -3,6 +3,13 @@
 
 # Generated files
 links.txt
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
 
 # Python
 __pycache__/
@@ -41,4 +48,10 @@ ENV/
 .DS_Store
 DS_Store
 
-links.txt
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Export files
+unsubscribe_links_*.txt
