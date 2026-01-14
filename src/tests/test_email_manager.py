@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
-import email
+import email as email_module
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 

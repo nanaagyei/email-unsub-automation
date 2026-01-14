@@ -1,8 +1,9 @@
 """Email manager for handling IMAP operations and email processing"""
 import os
 import imaplib
-import email
+import email as email_module
 from email.header import decode_header
+from email.message import Message
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
 from bs4 import BeautifulSoup
@@ -60,22 +61,22 @@ class EmailManager:
             self.logger.error(f"Error searching emails: {str(e)}")
             return []
     
-    def fetch_email(self, email_id: bytes) -> Optional[email.message.Message]:
+    def fetch_email(self, email_id: bytes) -> Optional[Message]:
         """Fetch a single email by ID"""
         try:
             _, data = self.mail.fetch(email_id, "(RFC822)")
-            msg = email.message_from_bytes(data[0][1])
+            msg = email_module.message_from_bytes(data[0][1])
             return msg
         except Exception as e:
             self.logger.error(f"Error fetching email {email_id}: {str(e)}")
             return None
     
-    def extract_email_data(self, msg: email.message.Message) -> Dict:
+    def extract_email_data(self, msg: Message) -> Dict:
         """Extract relevant data from email message"""
         try:
             # Get sender
             from_header = msg.get("From", "")
-            sender = email.utils.parseaddr(from_header)[1]
+            sender = email_module.utils.parseaddr(from_header)[1]
             
             # Get subject
             subject_header = msg.get("Subject", "")
@@ -84,7 +85,7 @@ class EmailManager:
             # Get date
             date_header = msg.get("Date", "")
             try:
-                received_date = email.utils.parsedate_to_datetime(date_header)
+                received_date = email_module.utils.parsedate_to_datetime(date_header)
             except:
                 received_date = datetime.now()
             
@@ -116,7 +117,7 @@ class EmailManager:
         except:
             return header
     
-    def extract_html_content(self, msg: email.message.Message) -> List[str]:
+    def extract_html_content(self, msg: Message) -> List[str]:
         """Extract HTML content from email"""
         html_parts = []
         
@@ -235,7 +236,7 @@ class EmailManager:
         except:
             return False
     
-    def get_list_unsubscribe_header(self, msg: email.message.Message) -> Optional[str]:
+    def get_list_unsubscribe_header(self, msg: Message) -> Optional[str]:
         """Get List-Unsubscribe header if present"""
         try:
             return msg.get("List-Unsubscribe", None)
