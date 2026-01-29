@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime
 from typing import List, Optional, Dict
 import os
+import threading
 
 
 class Database:
@@ -11,21 +12,38 @@ class Database:
     def __init__(self, db_path: str = "email_automation.db"):
         """Initialize database connection"""
         self.db_path = db_path
-        self.connection = None
+        # Use thread-local storage for connections
+        self._local = threading.local()
         self.create_tables()
     
     def connect(self):
-        """Create database connection"""
-        if self.connection is None:
-            self.connection = sqlite3.connect(self.db_path)
-            self.connection.row_factory = sqlite3.Row
-        return self.connection
+        """Create database connection (thread-safe)
+        
+        Creates a new connection for each thread to avoid SQLite threading issues.
+        Connections are stored in thread-local storage.
+        """
+        # Create a new connection for this thread if it doesn't exist
+        if not hasattr(self._local, 'connection') or self._local.connection is None:
+            # Use check_same_thread=False to allow the connection to be used
+            # across different threads safely (SQLite handles this internally)
+            self._local.connection = sqlite3.connect(
+                self.db_path,
+                check_same_thread=False
+            )
+            self._local.connection.row_factory = sqlite3.Row
+            # Enable WAL mode for better concurrency
+            self._local.connection.execute("PRAGMA journal_mode=WAL")
+        return self._local.connection
     
     def close(self):
-        """Close database connection"""
-        if self.connection:
-            self.connection.close()
-            self.connection = None
+        """Close database connection for current thread"""
+        if hasattr(self._local, 'connection') and self._local.connection:
+            try:
+                self._local.connection.close()
+            except:
+                pass
+            finally:
+                self._local.connection = None
     
     def create_tables(self):
         """Create all necessary tables"""
